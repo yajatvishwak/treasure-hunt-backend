@@ -1,8 +1,14 @@
 // Prework and Importing
 const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+
 require("dotenv").config();
+
 const { default: humanId } = require("human-id");
 const string = require("string-sanitizer");
+const cors = require("cors");
+
 const {
   uniqueNamesGenerator,
   adjectives,
@@ -21,8 +27,19 @@ const { default: mongoose } = require("mongoose");
 const app = express();
 app.use(morgan("dev"));
 app.use(express.json());
-
+app.use(cors());
 const PORT = process.env.PORT || 5000;
+
+// server creation
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
+server.listen(PORT, () => {
+  console.log(`Server is listening on port ${PORT}`);
+});
 
 // State Declaration
 let definedLevelQuestions = [
@@ -164,9 +181,9 @@ function checkGameStatus(req, res, next) {
   }
 }
 
-async function checkComplete(teamID, fincode) {
+async function checkComplete(teamID, fincode2) {
   const team = await Team.findOne({ teamID: teamID });
-  if (fincode === "middleware") {
+  if (fincode2 === "middleware") {
     console.log(team.complete, "from middleware function");
     return team.complete;
   } else {
@@ -183,11 +200,15 @@ async function checkComplete(teamID, fincode) {
 
       let checkFincode =
         string.sanitize(fincode).toLowerCase() ===
-        string.sanitize(fincode).toLowerCase();
+        string.sanitize(fincode2).toLowerCase();
       console.log(string.sanitize(fincode).toLowerCase());
+      console.log(string.sanitize(fincode2).toLowerCase());
       console.log(checkFincode);
       if (checkFincode) {
-        await Team.findOneAndUpdate({ teamID: teamID }, { complete: true });
+        await Team.findOneAndUpdate(
+          { teamID: teamID },
+          { complete: true, completeTime: new Date() }
+        );
         return true;
       }
       return false;
@@ -205,10 +226,48 @@ async function checkCompleteMiddleware(req, res, next) {
     next();
   }
 }
+let rank = [];
+async function calculateRank() {
+  let teams = await Team.find({});
+  teams = teams.sort((a, b) => {
+    return b.current - a.current;
+  });
+  teams = teams.sort((a, b) => {
+    return a.completeTime - b.completeTime;
+  });
+
+  rank = teams.map((item, index) => {
+    return {
+      teamID: item.teamID,
+      level: item.current,
+      rank: index + 1,
+      completionTime: item.completeTime
+        ? item.completeTime.toLocaleString()
+        : "",
+    };
+  });
+  return rank;
+}
+
+// socket.io
+io.on("connection", (socket) => {
+  console.log("🔗 new user connection ");
+});
+
+setInterval(async () => {
+  await calculateRank();
+  io.emit("leaderboard", {
+    rank: rank,
+  });
+}, 20000);
 
 // Routes
 app.get("/", (req, res) => {
   res.send("Game Status: " + localStorage.getItem("game-status"));
+});
+app.get("/calculateRank", (req, res) => {
+  calculateRank();
+  res.send({ rank });
 });
 app.get("/blockGame/gigachadbigcockenergyonlypls", (req, res) => {
   localStorage.setItem("game-status", "blocked");
@@ -285,7 +344,7 @@ app.post(
       if (err) {
         res.status(500).send(err);
       } else if (team.current !== -1) {
-        res.status(400).send({
+        res.status(200).send({
           status: "GAS",
           message: "You have already started the game",
         });
@@ -298,13 +357,18 @@ app.post(
           team.current = 0;
           team.save();
           //emit to player the next question
+          calculateRank();
+          io.emit("leaderboard", {
+            rank: rank,
+          });
           res.status(200).send({
             status: "CA",
             nextQuestion: team.route[team.current].levelQuestion,
+            nextCaptchaQuestion: team.route[team.current].captchaQuestion,
             current: team.current,
           });
         } else {
-          res.status(401).send({ status: "WA" });
+          res.status(200).send({ status: "WA" });
         }
       }
     });
@@ -320,7 +384,7 @@ app.get(
         res.status(500).send(err);
       } else {
         if (team.current === -1) {
-          res.status(400).send({
+          res.status(200).send({
             status: "GNS",
             message: "You have not started the game yet",
           });
@@ -351,17 +415,17 @@ app.post(
       if (err) {
         res.status(500).send(err);
       } else if (team.current === -1) {
-        res.status(400).send({
+        res.status(200).send({
           status: "GNS",
           message: "You have not started the game yet",
         });
       } else if (team.current === 10) {
-        res.status(400).send({
+        res.status(200).send({
           status: "CG",
           message: "You have completed the game",
         });
       } else if (team.current !== req.body.current) {
-        res.status(400).send({
+        res.status(200).send({
           status: "WC",
           message: "Out of sync",
         });
@@ -377,14 +441,28 @@ app.post(
         if (checkAnswerWithCaptcha) {
           team.current = team.current + 1;
           await team.save();
-          res.status(200).send({
-            status: "CA",
-            nextQuestion: team.route[team.current].levelQuestion,
-            current: team.current,
-            finCode: team.route[team.current].finCode,
-          });
+          console.log("CURRENT:", team.current);
+
+          if (team.current === 10) {
+            res.status(200).send({
+              status: "CG",
+              message: "You have completed the game",
+            });
+          } else {
+            calculateRank();
+            io.emit("leaderboard", {
+              rank: rank,
+            });
+            res.status(200).send({
+              status: "CA",
+              nextQuestion: team.route[team.current].levelQuestion,
+              nextCaptchaQuestion: team.route[team.current].captchaQuestion,
+              current: team.current,
+              finCode: team.route[team.current].finCode,
+            });
+          }
         } else {
-          res.status(400).send({ status: "WA" });
+          res.status(200).send({ status: "WA" });
         }
       }
     });
@@ -393,21 +471,17 @@ app.post(
 
 app.post(
   "/game/checkFincode",
-  [authenticateToken, checkGameStatus],
+  [authenticateToken, checkGameStatus, checkCompleteMiddleware],
   async (req, res) => {
     // PARAMS =>  finCode : String
-    if (await checkComplete(req.user.teamID, req.body.finCode)) {
+    if (await checkComplete(req.user.teamID, req.body.fincode)) {
       console.log("Game Completed: " + req.user.teamID);
       res.status(200).send({
         status: "FS",
         message: "You have completed the game",
       });
     } else {
-      res.status(400).send({ status: "WA" });
+      res.status(200).send({ status: "WA" });
     }
   }
 );
-
-app.listen(PORT, () => {
-  console.log(`Server is listening on port ${PORT}`);
-});
