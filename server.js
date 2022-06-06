@@ -72,7 +72,7 @@ let definedSolutions = [
 const connectDB = async () => {
   try {
     await mongoose.connect(
-      `mongodb://${process.env.MONGODB_URL}/${process.env.MONGODB_NAME}`,
+      `${process.env.MONGODB_URL}/${process.env.MONGODB_NAME}`,
       {
         useNewUrlParser: true,
         useUnifiedTopology: true,
