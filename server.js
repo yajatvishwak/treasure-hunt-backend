@@ -86,9 +86,12 @@ const connectDB = async () => {
 };
 connectDB();
 function generateFinCode() {
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let codes = [];
   for (let index = 0; index < 10; index++) {
-    codes.push(humanId("-"));
+    codes.push(
+      characters.charAt(Math.floor(Math.random() * characters.length))
+    );
   }
   return codes;
 }
@@ -183,6 +186,7 @@ function checkGameStatus(req, res, next) {
 
 async function checkComplete(teamID, fincode2) {
   const team = await Team.findOne({ teamID: teamID });
+  if (!team) return false;
   if (fincode2 === "middleware") {
     console.log(team.complete, "from middleware function");
     return team.complete;
@@ -251,7 +255,7 @@ async function calculateRank() {
 
 // socket.io
 io.on("connection", (socket) => {
-  console.log("🔗 new user connection ");
+  console.log("🔗 new user connection");
 });
 
 setInterval(async () => {
@@ -309,6 +313,8 @@ app.post("/game/registerTeam", checkGameStatus, (req, res) => {
 // STATUS :
 // 1. CA => Correct Answer
 // 2. WA => Wrong Answer
+// 2.1 WAQ => Wrong Answer and QR Code
+// 2.2 WQ => Wrong QR`Code
 // 3. GAS => Game is already started
 // 4. GNS => Game Not Started
 // 5. WC => Wrong Current --> reload page
@@ -383,6 +389,8 @@ app.get(
       if (err) {
         res.status(500).send(err);
       } else {
+        if (!team)
+          return res.send({ status: "TNF", message: "Team not found" });
         if (team.current === -1) {
           res.status(200).send({
             status: "GNS",
@@ -430,15 +438,23 @@ app.post(
           message: "Out of sync",
         });
       } else {
-        let checkAnswerWithCaptcha = team.route[team.current].captcha
+        let checkQR =
+          team.route[team.current].qrCodeSolution.trim().toLowerCase() ===
+          req.body.qrCodeSolution.trim().toLowerCase();
+        let checkCaptcha = team.route[team.current].captcha
           ? team.route[team.current].captchaAnswer.trim().toLowerCase() ===
-              req.body.captchaAnswer.trim().toLowerCase() &&
-            team.route[team.current].qrCodeSolution.trim().toLowerCase() ===
-              req.body.qrCodeSolution.trim().toLowerCase()
-          : team.route[team.current].qrCodeSolution.trim().toLowerCase() ===
-            req.body.qrCodeSolution.trim().toLowerCase();
+            req.body.captchaAnswer.trim().toLowerCase()
+          : true;
 
-        if (checkAnswerWithCaptcha) {
+        // let checkAnswerWithCaptcha = team.route[team.current].captcha
+        //   ? team.route[team.current].captchaAnswer.trim().toLowerCase() ===
+        //       req.body.captchaAnswer.trim().toLowerCase() &&
+        //     team.route[team.current].qrCodeSolution.trim().toLowerCase() ===
+        //       req.body.qrCodeSolution.trim().toLowerCase()
+        //   : team.route[team.current].qrCodeSolution.trim().toLowerCase() ===
+        //     req.body.qrCodeSolution.trim().toLowerCase();
+
+        if (checkCaptcha && checkQR) {
           team.current = team.current + 1;
           await team.save();
           console.log("CURRENT:", team.current);
@@ -453,7 +469,8 @@ app.post(
             io.emit("leaderboard", {
               rank: rank,
             });
-            res.status(200).send({
+            console.log("CA");
+            return res.status(200).send({
               status: "CA",
               nextQuestion: team.route[team.current].levelQuestion,
               nextCaptchaQuestion: team.route[team.current].captchaQuestion,
@@ -461,8 +478,27 @@ app.post(
               finCode: team.route[team.current].finCode,
             });
           }
-        } else {
-          res.status(200).send({ status: "WA" });
+        }
+        if (!checkCaptcha && !checkQR) {
+          console.log("WAQ");
+
+          return res.status(200).send({
+            status: "WAQ",
+            message: "Wrong answer",
+          });
+        }
+        if (!checkCaptcha && checkQR) {
+          console.log("WA");
+
+          return res.status(200).send({
+            status: "WA",
+            message: "Wrong answer",
+          });
+        }
+        if (!checkQR && checkCaptcha) {
+          console.log("WQ");
+
+          return res.status(200).send({ status: "WQ" });
         }
       }
     });
