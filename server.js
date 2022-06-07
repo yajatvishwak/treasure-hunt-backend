@@ -42,30 +42,8 @@ server.listen(PORT, () => {
 });
 
 // State Declaration
-let definedLevelQuestions = [
-  "l1",
-  "l2",
-  "l3",
-  "l4",
-  "l5",
-  "l6",
-  "l7",
-  "l8",
-  "l9",
-  "l10",
-];
-let definedSolutions = [
-  "s1",
-  "s2",
-  "s3",
-  "s4",
-  "s5",
-  "s6",
-  "s7",
-  "s8",
-  "s9",
-  "s10",
-];
+let definedLevelQuestions = ["l1", "l2", "l3", "l4", "l5", "l6", "l7", "l8"];
+let definedSolutions = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"];
 
 // Helper functions
 
@@ -88,7 +66,7 @@ connectDB();
 function generateFinCode() {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let codes = [];
-  for (let index = 0; index < 10; index++) {
+  for (let index = 0; index < 8; index++) {
     codes.push(
       characters.charAt(Math.floor(Math.random() * characters.length))
     );
@@ -141,7 +119,7 @@ function generateRoutes() {
   );
   let finCodes = generateFinCode();
   let route = [];
-  let CQmap = shuffleArray([1, 1, 1, 1, 1, 0, 0, 0, 0, 0]);
+  let CQmap = shuffleArray([1, 1, 1, 1, 0, 0, 0, 0]);
   for (let index = 0; index < shuffledLevels.length; index++) {
     let { CQuestion, CAnswer } = getCaptchaQuestionAndAnswer();
     route.push({
