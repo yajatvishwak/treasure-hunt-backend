@@ -43,15 +43,25 @@ server.listen(PORT, () => {
 
 // State Declaration
 let definedLevelQuestions = [
-`I'm sure this treasure hunt has got your spirits up high. Such a spirit talks to you now. To judge your soul and decide whether you live or die, all you've to do is guess who am I?`,
-`I’m a red hot American truck, but with a bipolar disorder.`,
-`A necessity to some, a pleasure to many, and I'm best enjoyed with some company. Some like it hot, some like it cold, some like it mild, and some like it bold.`, 
-`The fruit of patience is sweet. So is my fruit, although I am bourne from a spiky father and a sticky mother`, 
-`No matter what the gender or the name On the grand scale, we are all the same`,
-`For bestowing upon us all the necessary skills and knowledge, We want to show our love and gratitude for this college`,
-`I'm synthetic, colored, and come in different sizes. I prevent liquids from reaching their destination. I'm small and handy, but when required I expand to your satisfaction. There is wood beneath me.`,
-"Never stop dreaming."];
-let definedSolutions = ["qr-M7Ubc", "qr-umyWf", "qr-ikmfZ", "qr-Eunvi", "qr-pJzqd", "qr-rKwEp", "qr-ddv98", "qr-hWdTY"];
+  `I'm sure this treasure hunt has got your spirits up high. Such a spirit talks to you now. To judge your soul and decide whether you live or die, all you've to do is guess who am I?`,
+  `I’m a red hot American truck, but with a bipolar disorder.`,
+  `A necessity to some, a pleasure to many, and I'm best enjoyed with some company. Some like it hot, some like it cold, some like it mild, and some like it bold.`,
+  `The fruit of patience is sweet. So is my fruit, although I am bourne from a spiky father and a sticky mother`,
+  `No matter what the gender or the name On the grand scale, we are all the same`,
+  `For bestowing upon us all the necessary skills and knowledge, We want to show our love and gratitude for this college`,
+  `I'm synthetic, colored, and come in different sizes. I prevent liquids from reaching their destination. I'm small and handy, but when required I expand to your satisfaction. There is wood beneath me.`,
+  "Never stop dreaming.",
+];
+let definedSolutions = [
+  "qr-M7Ubc",
+  "qr-umyWf",
+  "qr-ikmfZ",
+  "qr-Eunvi",
+  "qr-pJzqd",
+  "qr-rKwEp",
+  "qr-ddv98",
+  "qr-hWdTY",
+];
 
 // Helper functions
 
@@ -127,7 +137,7 @@ function generateRoutes() {
   );
   let finCodes = generateFinCode();
   let route = [];
-  let CQmap = shuffleArray([1, 1, 1, 1, 0, 0, 0, 0]);
+  let CQmap = shuffleArray([1, 1, 0, 0, 0, 0, 0, 0]);
   for (let index = 0; index < shuffledLevels.length; index++) {
     let { CQuestion, CAnswer } = getCaptchaQuestionAndAnswer();
     route.push({
@@ -189,8 +199,9 @@ async function checkComplete(teamID, fincode2) {
         .join("-");
 
       let checkFincode =
-        string.sanitize(fincode).toLowerCase() ===
-        string.sanitize(fincode2).toLowerCase();
+        string
+          .sanitize(fincode.substring(0, fincode.length - 1))
+          .toLowerCase() === string.sanitize(fincode2).toLowerCase();
       console.log(string.sanitize(fincode).toLowerCase());
       console.log(string.sanitize(fincode2).toLowerCase());
       console.log(checkFincode);
@@ -255,6 +266,7 @@ setInterval(async () => {
 app.get("/", (req, res) => {
   res.send("Game Status: " + localStorage.getItem("game-status"));
 });
+
 app.get("/calculateRank", (req, res) => {
   calculateRank();
   res.send({ rank });
@@ -296,6 +308,23 @@ app.post("/game/registerTeam", checkGameStatus, (req, res) => {
   });
 });
 
+app.post("/game/login", (req, res) => {
+  if (req.body.masterpass !== process.env.MASTERPASS)
+    return res.send({ status: "FAIL", message: "Invalid master password" });
+  Team.findOne({ teamID: req.body.teamID }, (err, team) => {
+    if (err) {
+      res.status(500).send(err);
+    } else if (!team) {
+      res.status(200).send({ status: "NT", message: "Team not found" });
+    } else {
+      res.status(200).send({
+        teamID: team.teamID,
+        accessToken: generateAccessToken(team.teamID),
+      });
+    }
+  });
+});
+
 // STATUS :
 // 1. CA => Correct Answer
 // 2. WA => Wrong Answer
@@ -307,6 +336,7 @@ app.post("/game/registerTeam", checkGameStatus, (req, res) => {
 // 6. CG => Completed Game --> take to fincode
 // 7. GNF => Game not finished
 // 8. FS => FinCode Submitted --> show on leaderboard, game complete
+// 9. NT => Team Not Found
 
 // TODO: make a socket server to send the players the next level
 // socket server sends only rank of the team and only leader board
@@ -358,6 +388,7 @@ app.post(
             nextQuestion: team.route[team.current].levelQuestion,
             nextCaptchaQuestion: team.route[team.current].captchaQuestion,
             current: team.current,
+            captcha: team.route[team.current].captcha,
           });
         } else {
           res.status(200).send({ status: "WA" });
@@ -461,7 +492,7 @@ app.post(
               nextQuestion: team.route[team.current].levelQuestion,
               nextCaptchaQuestion: team.route[team.current].captchaQuestion,
               current: team.current,
-              finCode: team.route[team.current].finCode,
+              finCode: team.route[team.current - 1].finCode,
             });
           }
         }
