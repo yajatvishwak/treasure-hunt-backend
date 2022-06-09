@@ -179,7 +179,7 @@ async function checkComplete(teamID, fincode2) {
   } else {
     console.log("from checkComplete function");
 
-    if (team.current === 10) {
+    if (team.current === 8) {
       console.log("from checkComplete function");
 
       let fincode = team.route
@@ -382,7 +382,7 @@ app.get(
             status: "GNS",
             message: "You have not started the game yet",
           });
-        } else if (team.current === 10) {
+        } else if (team.current === 8) {
           res.status(200).send({
             status: "CG",
             message: "You have completed the game",
@@ -413,7 +413,7 @@ app.post(
           status: "GNS",
           message: "You have not started the game yet",
         });
-      } else if (team.current === 10) {
+      } else if (team.current === 8) {
         res.status(200).send({
           status: "CG",
           message: "You have completed the game",
@@ -445,7 +445,7 @@ app.post(
           await team.save();
           console.log("CURRENT:", team.current);
 
-          if (team.current === 10) {
+          if (team.current === 8) {
             res.status(200).send({
               status: "CG",
               message: "You have completed the game",
