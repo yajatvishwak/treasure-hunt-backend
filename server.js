@@ -42,8 +42,16 @@ server.listen(PORT, () => {
 });
 
 // State Declaration
-let definedLevelQuestions = ["l1", "l2", "l3", "l4", "l5", "l6", "l7", "l8"];
-let definedSolutions = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"];
+let definedLevelQuestions = [
+`I'm sure this treasure hunt has got your spirits up high. Such a spirit talks to you now. To judge your soul and decide whether you live or die, all you've to do is guess who am I?`,
+`I’m a red hot American truck, but with a bipolar disorder.`,
+`A necessity to some, a pleasure to many, and I'm best enjoyed with some company. Some like it hot, some like it cold, some like it mild, and some like it bold.`, 
+`The fruit of patience is sweet. So is my fruit, although I am bourne from a spiky father and a sticky mother`, 
+`No matter what the gender or the name On the grand scale, we are all the same`,
+`For bestowing upon us all the necessary skills and knowledge, We want to show our love and gratitude for this college`,
+`I'm synthetic, colored, and come in different sizes. I prevent liquids from reaching their destination. I'm small and handy, but when required I expand to your satisfaction. There is wood beneath me.`,
+"Never stop dreaming."];
+let definedSolutions = ["qr-M7Ubc", "qr-umyWf", "qr-ikmfZ", "qr-Eunvi", "qr-pJzqd", "qr-rKwEp", "qr-ddv98", "qr-hWdTY"];
 
 // Helper functions
 
