@@ -186,7 +186,7 @@ function getCaptchaQuestionAndAnswer() {
     "space",
     "hotdog",
   ];
-  let randomIndex = Math.floor(Math.random() * startQuestions.length);
+  let randomIndex = Math.floor(Math.random() * captchaQuestions.length);
   return {
     CQuestion: captchaQuestions[randomIndex],
     CAnswer: captchaAnswer[randomIndex],
