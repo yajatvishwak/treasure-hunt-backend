@@ -123,11 +123,74 @@ function shuffleArray(array) {
 }
 
 function getStartQuestionAndAnswer() {
-  return { startQuestion: "startQuestion", startAnswer: "startAnswer" };
+  let startQuestions = [
+    "What two words, added together, contain the most letters?",
+    "I am easy to lift but hard to throw. What am I?",
+    "What has a bottom at the top?",
+    "If you drop a yellow hat in the Red Sea, what does it become?",
+    "What color is the wind?",
+    "The more you take, the more you leave behind. What am I?",
+    "The more there is, the less you see. What am I?",
+    "A word I know, six letters it contains, removes one letter, and twelve remains. What am I?",
+    "What word of five letters has only one left when two letters are removed?",
+    "If you have it and you show it to other people, I'm gone. What am I?",
+    "My rings are not of gold, but I get more as I get old. What am I?",
+    "No sooner spoken than broken. What is it?",
+    "What can travel around the world while staying in a corner?",
+    "Where can you finish a book without finishing a sentence?",
+  ];
+  let startAnswer = [
+    "post office",
+    "feather",
+    "legs",
+    "wet",
+    "blew",
+    "fingerprints",
+    "darkness",
+    "dozens",
+    "stone",
+    "secret",
+    "tree",
+    "silence",
+    "stamp",
+    "prison",
+  ];
+  let randomIndex = Math.floor(Math.random() * startQuestions.length);
+
+  return {
+    startQuestion: startQuestions[randomIndex],
+    startAnswer: startAnswer[randomIndex],
+  };
 }
 
 function getCaptchaQuestionAndAnswer() {
-  return { CQuestion: "CQuestion", CAnswer: "CAnswer" };
+  let captchaQuestions = [
+    "You see me once in November, twice in October and not at all in December. What am I?",
+    "What is 3/7 chicken, 2/3 cat and 2/4 goat?",
+    "I come in different sizes and curvatures. Sometimes, fluids come out of me. If you blow me, it feels really good. What am I?",
+    "What four-letter word begins with “f” and ends with “k”, and if you can’t get it you can always just use your hands?",
+    "White in colour, comes out from the dark, the more the little, a lady's pleasure, What am I?",
+    "What gets longer if pulled, fits snugly between breasts, slides neatly into a hole, chokes people when used incorrectly, and works well when jerked?",
+    "Mukund tries to attempt it, but Kavya did it, Mukund got punished but kavya didn't get punished, what were they up to?",
+    "A microbiologist dies soon after his suit tears. Where was he working?",
+    "Kavya forgot her laptop password, can you help her crack it. Here's the hint: 1 house 2 house 5 nightmare 4 random 2 boob 1 great",
+  ];
+  let captchaAnswer = [
+    "o",
+    "chicago",
+    "nose",
+    "fork",
+    "pearl",
+    "seatbelt",
+    "suicide",
+    "space",
+    "hotdog",
+  ];
+  let randomIndex = Math.floor(Math.random() * startQuestions.length);
+  return {
+    CQuestion: captchaQuestions[randomIndex],
+    CAnswer: captchaAnswer[randomIndex],
+  };
 }
 
 function generateRoutes() {
